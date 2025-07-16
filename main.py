@@ -40,7 +40,8 @@ class AvaliacaoEntrada(BaseModel):
 def avaliar_ia(entrada: AvaliacaoEntrada):
     openai.api_key = OPENAI_API_KEY
 
-    prompt = f"Avalie o seguinte projeto:
+    prompt = f"""
+    Avalie o seguinte projeto:
 Nome: {entrada.nome}
 Descrição: {entrada.descricao}
 Segmento: {entrada.segmento}
