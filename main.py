@@ -41,8 +41,17 @@ def analisar_oportunidade(dados: EntradaJSON, db: Session = Depends(get_db)):
     if dados.username != "admin" or dados.password != "123456":
         raise HTTPException(status_code=401, detail="Credenciais inválidas")
 
-    prompt = f"Avalie o seguinte projeto: {dados.pitch}
-Dê uma pontuação de 0 a 100 e classifique como 'Baixo', 'Médio' ou 'Alto' potencial. Também gere um pequeno resumo de recomendação."
+  prompt = f"""
+Avalie o seguinte projeto enviado por {dados.nome}:
+
+{dados.pitch}
+
+Retorne uma análise com:
+- Pontuação geral (0 a 100)
+- Potencial de mercado (Baixo, Médio, Alto)
+- Resumo técnico
+- Sugestões de melhoria
+"""
 
     openai.api_key = os.getenv("OPENAI_API_KEY")
     try:
