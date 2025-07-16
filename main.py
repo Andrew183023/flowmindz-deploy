@@ -67,4 +67,4 @@ def analisar_oportunidade(dados: EntradaJSON, db: Session = Depends(get_db)):
         "potencial": nova.potencial,
         "resumo": nova.resumo,
     }
-'''
+
