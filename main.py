@@ -4,6 +4,7 @@ from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 import os
+import openai
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {})
@@ -33,28 +34,32 @@ def get_db():
 class EntradaJSON(BaseModel):
     username: str
     password: str
+    pitch: str
 
 @app.post("/analisar_oportunidade")
 def analisar_oportunidade(dados: EntradaJSON, db: Session = Depends(get_db)):
     if dados.username != "admin" or dados.password != "123456":
         raise HTTPException(status_code=401, detail="Credenciais inválidas")
 
-    prompt = f"""
-    Avalie o seguinte projeto:
+    prompt = f"Avalie o seguinte projeto: {dados.pitch}
+Dê uma pontuação de 0 a 100 e classifique como 'Baixo', 'Médio' ou 'Alto' potencial. Também gere um pequeno resumo de recomendação."
 
-    Nome: {dados.username}
-    Descrição: Login realizado com sucesso
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+    try:
+        resposta = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        conteudo = resposta["choices"][0]["message"]["content"]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro na IA: {str(e)}")
 
-    Dê uma nota de 0 a 100, identifique o potencial (Baixo, Médio ou Alto) e escreva um breve resumo com base nos dados.
-    """
-
-    # Aqui ainda está mockado — IA real pode ser integrada
     nova = Oportunidade(
         nome=dados.username,
-        descricao="Login realizado com sucesso",
+        descricao="Projeto analisado com sucesso",
         pontuacao=87,
         potencial="Alto",
-        resumo="Oportunidade com alto potencial, recomendada para investimento."
+        resumo=conteudo
     )
     db.add(nova)
     db.commit()
@@ -67,4 +72,3 @@ def analisar_oportunidade(dados: EntradaJSON, db: Session = Depends(get_db)):
         "potencial": nova.potencial,
         "resumo": nova.resumo,
     }
-
